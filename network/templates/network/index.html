@@ -1,5 +1,8 @@
 {% extends "network/layout.html" %}
-
+{% load static %}
+{% block script %}
+    <script src="{% static 'network/homepage.js' %}"></script>
+{% endblock %}
 {% block body %}
-    TODO
+    <h1 id="header">TODO</h1>
 {% endblock %}

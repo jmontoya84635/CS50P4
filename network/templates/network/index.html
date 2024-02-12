@@ -1,8 +1,29 @@
 {% extends "network/layout.html" %}
 {% load static %}
 {% block script %}
-    <script src="{% static 'network/homepage.js' %}"></script>
+    <script src="{% static 'network/index.js' %}"></script>
 {% endblock %}
 {% block body %}
-    <h1 id="header">TODO</h1>
+    <div id="create-post">
+        {% if user.is_authenticated %}
+            <div class="card m-3">
+                <form method="post">
+                    {% csrf_token %}
+                    <h5 class="card-header">{{ user.username.capitalize }}</h5>
+                    <div class="card-body">
+                        <div class="flex-container mx-3">
+                            <div class="form-floating col-11 me-3">
+                                <textarea class="form-control" id="post-text" placeholder="Create Post"></textarea>
+                                <label for="post-text">Make new post</label>
+                            </div>
+                            <button id="post-submit" class="btn btn-primary form-control" type="submit">Submit</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+    <div id="Posts">
+    
+    </div>
 {% endblock %}

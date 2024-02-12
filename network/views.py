@@ -1,12 +1,37 @@
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
+from .models import User, Post
 
-from .models import User
+
+# API
+
+def feed(request, feed_name):
+    if request.method != "post":
+        return JsonResponse({
+            "error": "Must be post response",
+        }, status=400)
+    if feed_name == "main":
+        posts = Post.objects.all()
+    else:
+        return JsonResponse({
+            "error": "Not a valid feed"
+        }, status=400)
+
+    posts.order_by("-timestamp").all()
+    JsonResponse([post.serialize() for post in posts])
 
 
+def create_post(request):
+    if request.method != "post":
+        return JsonResponse({
+            "error": "Must be post response",
+        }, status=400)
+
+
+# VIEWS
 def index(request):
     return render(request, "network/index.html")
 
@@ -61,3 +86,15 @@ def register(request):
         return HttpResponseRedirect(reverse("index"))
     else:
         return render(request, "network/register.html")
+
+
+def profile(request):
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect(reverse('login'))
+    return render(request, "network/profile.html", {
+        "username": request.user.username,
+    })
+
+
+def following(request):
+    return render(request, "network/following.html")

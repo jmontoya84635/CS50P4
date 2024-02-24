@@ -3,31 +3,38 @@ from django.db import IntegrityError
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
-from .models import User, Post
+from .models import User, Post, Reaction, Comment
 
 
 # API
 
 def feed(request, feed_name):
-    if request.method != "post":
-        return JsonResponse({
-            "error": "Must be post response",
-        }, status=400)
     if feed_name == "main":
         posts = Post.objects.all()
     else:
         return JsonResponse({
             "error": "Not a valid feed"
         }, status=400)
-
-    posts.order_by("-timestamp").all()
-    JsonResponse([post.serialize() for post in posts])
+    return JsonResponse([post.serialize(request.user) for post in posts], safe=False)
 
 
 def create_post(request):
     if request.method != "post":
         return JsonResponse({
             "error": "Must be post response",
+        }, status=400)
+
+
+def comment(request, postId, action):
+    if action == "view":
+        post = Post.objects.get(pk=postId)
+        comments = post.Comment.all()
+        return JsonResponse([str_comment.serialize() for str_comment in comments], safe=False)
+
+
+    else:
+        return JsonResponse({
+            "error": "Invalid action."
         }, status=400)
 
 
@@ -98,3 +105,30 @@ def profile(request):
 
 def following(request):
     return render(request, "network/following.html")
+
+
+def like(request, postId, action):
+    if request.method != "POST":
+        return JsonResponse({
+            "error": "POST request required."
+        }, status=400)
+    if action == "add":
+        post = Post.objects.get(pk=postId)
+        reaction = Reaction(creator=request.user, post=post)
+        reaction.save()
+        return JsonResponse({
+            "message": "added like successfully.",
+            "likeCount": len(post.likes.all()),
+        }, status=201)
+    if action == "remove":
+        post = Post.objects.get(pk=postId)
+        reaction = Reaction.objects.get(creator=request.user, post=post)
+        reaction.delete()
+        return JsonResponse({
+            "message": "removed like successfully.",
+            "likeCount": len(post.likes.all()),
+        }, status=201)
+    else:
+        return JsonResponse({
+            "error": "Invalid action."
+        }, status=400)

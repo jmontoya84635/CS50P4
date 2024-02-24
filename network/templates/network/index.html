@@ -1,29 +1,33 @@
-{% extends "network/layout.html" %}
+2{% extends "network/layout.html" %}
 {% load static %}
 {% block script %}
     <script src="{% static 'network/index.js' %}"></script>
 {% endblock %}
+
 {% block body %}
-    <div id="create-post">
-        {% if user.is_authenticated %}
-            <div class="card m-3">
+    <div id="create-post" class="m-4">
+        <div class="card">
+            {% if user.is_authenticated %}
                 <form method="post">
                     {% csrf_token %}
-                    <h5 class="card-header">{{ user.username.capitalize }}</h5>
+                    <h5 class="card-header">Hello, {{ user.username }}</h5>
                     <div class="card-body">
-                        <div class="flex-container mx-3">
-                            <div class="form-floating col-11 me-3">
+                        <div class="d-flex">
+                            <div class="form-floating flex-grow-1 me-3">
                                 <textarea class="form-control" id="post-text" placeholder="Create Post"></textarea>
                                 <label for="post-text">Make new post</label>
                             </div>
-                            <button id="post-submit" class="btn btn-primary form-control" type="submit">Submit</button>
+                            <button id="post-submit" class="btn btn-primary" type="submit">Submit</button>
                         </div>
                     </div>
                 </form>
-            </div>
-        {% endif %}
-    </div>
-    <div id="Posts">
+            {% else %}
+                <div class="card-header">
+                    <h5 class="text-lg-center" style="color: red">You must be signed in to create a new post</h5>
+                </div>
+            {% endif %}
 
+        </div>
     </div>
+    <div id="Posts"></div>
 {% endblock %}

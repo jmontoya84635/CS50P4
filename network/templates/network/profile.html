@@ -1,0 +1,51 @@
+{% extends "network/layout.html" %}
+{% load static %}
+{% block script %}
+    <script src="{% static 'network/profile.js' %}"></script>
+{% endblock %}
+{% block body %}
+    <br>
+    <hr>
+    <div class="m-3 d-flex justify-content-around">
+        <h1>{{ profileUsername }}'s page</h1>
+        {% if user.is_authenticated %}
+{#            TODO: fix follow / unfollow#}
+            <button class="btn btn-primary">Follow</button>
+        {% endif %}
+    </div>
+    <hr>
+    <div id="profileStats card" class="d-flex justify-content-around">
+        <button class="text-center" id="user-post-count">
+            <span>{{ postCount }}</span>
+            <span>Posts</span>
+        </button>
+        <div class="text-center" id="user-follower-count">
+            <h2>{{ followerCount }}</h2>
+            <h4>followers</h4>
+        </div>
+        <div class="text-center" id="user-following-count">
+            <h2>{{ followingCount }}</h2>
+            <h4>following</h4>
+        </div>
+    </div>
+    <hr>
+
+    {% for post in posts %}
+        <div class="m-4 card">
+            <div class="card-header">{{ post.creator }}</div>
+            <div class="card-body">{{ post.content }}</div>
+            <div class="card-footer d-flex">
+                <small class="text-body-secondary">{{ post.timestamp }}</small>
+            </div>
+        </div>
+    {% endfor %}
+
+    <div class="offcanvas offcanvas-bottom" tabindex="-1" id="offcanvasBottom" aria-labelledby="offcanvasBottomLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="offcanvasBottomLabel"></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body" id="offcanvasBody"></div>
+    </div>
+
+{% endblock %}

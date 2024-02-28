@@ -1,6 +1,5 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -13,11 +12,16 @@ class User(AbstractUser):
         }
 
 
+class Follow(models.Model):
+    follower = models.ForeignKey(User, on_delete=models.CASCADE, related_name='following')
+    following = models.ForeignKey(User, on_delete=models.CASCADE, related_name='followers')
+
+
 class Post(models.Model):
     id = models.AutoField(primary_key=True)
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name="Post")
     content = models.CharField(max_length=500)
-    timestamp = timezone.now()
+    timestamp = models.DateTimeField(auto_now_add=True)
 
     def serialize(self, user=None):
         liked = False
@@ -40,17 +44,19 @@ class Post(models.Model):
 
 class Comment(models.Model):
     id = models.AutoField(primary_key=True)
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="Comment")
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="Comment", null=True, blank=True)
     creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name="Comment")
     text = models.CharField(max_length=250)
     # fixme: reply should be its own model because it doesnt need a post!
-    reply = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
+    comment = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name="replies")
+    timestamp = models.DateTimeField(auto_now_add=True)
 
     def serialize(self):
         return {
             "id": self.id,
             "creator": self.creator.username,
             "text": self.text,
+            "timestamp": self.timestamp.strftime("%b %d %Y, %I:%M %p"),
         }
 
 

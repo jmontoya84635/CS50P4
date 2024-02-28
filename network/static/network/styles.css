@@ -1,1 +1,27 @@
+#offcanvasBottom {
+    height: auto;
+    max-height: 70%;
+    min-height: 30%;
+}
 
+.submitButton {
+    height: 55px;
+    align-self: flex-end;
+}
+
+.card-body p {
+    margin-bottom: 0;
+}
+
+
+@keyframes pop {
+    0% {
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}

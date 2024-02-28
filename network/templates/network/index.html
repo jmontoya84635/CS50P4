@@ -1,4 +1,4 @@
-2{% extends "network/layout.html" %}
+{% extends "network/layout.html" %}
 {% load static %}
 {% block script %}
     <script src="{% static 'network/index.js' %}"></script>
@@ -6,10 +6,9 @@
 
 {% block body %}
     <div id="create-post" class="m-4">
-        <div class="card">
+        <div class="card mt-5">
             {% if user.is_authenticated %}
-                <form method="post">
-                    {% csrf_token %}
+                <form id="create-post-form">
                     <h5 class="card-header">Hello, {{ user.username }}</h5>
                     <div class="card-body">
                         <div class="d-flex">
@@ -17,17 +16,46 @@
                                 <textarea class="form-control" id="post-text" placeholder="Create Post"></textarea>
                                 <label for="post-text">Make new post</label>
                             </div>
-                            <button id="post-submit" class="btn btn-primary" type="submit">Submit</button>
+                            <button id="create-post-submit" class="btn btn-primary submitButton" type="submit">Submit
+                            </button>
                         </div>
                     </div>
                 </form>
             {% else %}
                 <div class="card-header">
-                    <h5 class="text-lg-center" style="color: red">You must be signed in to create a new post</h5>
+                    <h5 class="text-center" style="color: red">You must be signed in to create a new post</h5>
                 </div>
             {% endif %}
 
         </div>
     </div>
     <div id="Posts"></div>
+    <div class="offcanvas offcanvas-bottom" tabindex="-1" id="offcanvasBottom" aria-labelledby="offcanvasBottomLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="offcanvasBottomLabel">Comments</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body" id="offcanvasBody"></div>
+        {% if user.is_authenticated %}
+            <div class="mb-4 mt-2 mx-4">
+                <form>
+                    <div class="card-body">
+                        <div class="d-flex">
+                            <div class="form-floating flex-grow-1 me-3">
+                                <textarea class="form-control" id="comment-text"
+                                          placeholder="Make new comment"></textarea>
+                                <label for="comment-text">Make new comment</label>
+                            </div>
+                            <button id="create-comment-submit" class="btn btn-primary submitButton" type="submit">Post
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                <br>
+            </div>
+        {% else %}
+            <hr>
+            <h5 class="text-center m-4" style="color: red">You must be signed in to create a new post</h5>
+        {% endif %}
+    </div>
 {% endblock %}

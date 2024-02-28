@@ -1,3 +1,6 @@
+import json
+
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.http import HttpResponseRedirect, JsonResponse
@@ -15,23 +18,81 @@ def feed(request, feed_name):
         return JsonResponse({
             "error": "Not a valid feed"
         }, status=400)
+    posts = posts.order_by("-timestamp").all()
     return JsonResponse([post.serialize(request.user) for post in posts], safe=False)
 
 
-def create_post(request):
-    if request.method != "post":
+@login_required
+def create(request, createType):
+    if request.method != "POST":
         return JsonResponse({
             "error": "Must be post response",
         }, status=400)
+    data = json.loads(request.body)
+    text = data.get("text", "")
+
+    if createType == "post":
+        newPost = Post(
+            creator=request.user,
+            content=text,
+        )
+        try:
+            newPost.save()
+        except Exception as e:
+            return JsonResponse({"error": e}, status=500)
+    elif createType == "comment":
+        print(f'comment on post {data.get("postId", "")} saying {text}')
+        commentPost = int(data.get("postId", ""))
+        newComment = Comment(
+            creator=request.user,
+            post=Post.objects.get(pk=commentPost),
+            text=text,
+        )
+        try:
+            newComment.save()
+        except Exception as e:
+            return JsonResponse({"error": e}, status=500)
+    return JsonResponse({"message": "post created successfully."}, status=201)
 
 
-def comment(request, postId, action):
-    if action == "view":
-        post = Post.objects.get(pk=postId)
+def comment(request, Id, action):
+    if action == "viewPostReplies":
+        post = Post.objects.get(pk=Id)
         comments = post.Comment.all()
+        comments = comments.order_by("-timestamp").all()
         return JsonResponse([str_comment.serialize() for str_comment in comments], safe=False)
+    elif action == "viewCommentReplies":
+        requestedComment = Comment.objects.get(pk=Id)
+        replies = requestedComment.replies.all()
+        return JsonResponse([str_comment.serialize() for str_comment in replies], safe=False)
+    else:
+        return JsonResponse({
+            "error": "Invalid action."
+        }, status=400)
 
 
+@login_required
+def like(request, postId, action):
+    if request.method != "POST":
+        return JsonResponse({
+            "error": "POST request required."
+        }, status=400)
+    if action == "add":
+        post = Post.objects.get(pk=postId)
+        reaction = Reaction(creator=request.user, post=post)
+        reaction.save()
+        return JsonResponse({
+            "message": "added like successfully.",
+            "likeCount": len(post.likes.all()),
+        }, status=201)
+    if action == "remove":
+        post = Post.objects.get(pk=postId)
+        reaction = Reaction.objects.get(creator=request.user, post=post)
+        reaction.delete()
+        return JsonResponse({
+            "message": "removed like successfully.",
+            "likeCount": len(post.likes.all()),
+        }, status=201)
     else:
         return JsonResponse({
             "error": "Invalid action."
@@ -63,6 +124,7 @@ def login_view(request):
         return render(request, "network/login.html")
 
 
+@login_required
 def logout_view(request):
     logout(request)
     return HttpResponseRedirect(reverse("index"))
@@ -95,40 +157,22 @@ def register(request):
         return render(request, "network/register.html")
 
 
-def profile(request):
-    if not request.user.is_authenticated:
-        return HttpResponseRedirect(reverse('login'))
+def profile(request, username):
+    profileUser = User.objects.get(username=username)
+    followers = profileUser.followers.all()
+    userFollowing = profileUser.following.all()
+    posts = profileUser.Post.all()
     return render(request, "network/profile.html", {
-        "username": request.user.username,
+        "profileUsername": username,
+        "followers": followers,
+        "followerCount": len(followers),
+        "following": userFollowing,
+        "followingCount": len(userFollowing),
+        "posts": posts,
+        "postCount": len(posts),
     })
 
 
+@login_required
 def following(request):
     return render(request, "network/following.html")
-
-
-def like(request, postId, action):
-    if request.method != "POST":
-        return JsonResponse({
-            "error": "POST request required."
-        }, status=400)
-    if action == "add":
-        post = Post.objects.get(pk=postId)
-        reaction = Reaction(creator=request.user, post=post)
-        reaction.save()
-        return JsonResponse({
-            "message": "added like successfully.",
-            "likeCount": len(post.likes.all()),
-        }, status=201)
-    if action == "remove":
-        post = Post.objects.get(pk=postId)
-        reaction = Reaction.objects.get(creator=request.user, post=post)
-        reaction.delete()
-        return JsonResponse({
-            "message": "removed like successfully.",
-            "likeCount": len(post.likes.all()),
-        }, status=201)
-    else:
-        return JsonResponse({
-            "error": "Invalid action."
-        }, status=400)

@@ -10,6 +10,7 @@ urlpatterns = [
     path("following", views.following, name="following"),
 
     # API
+    path("follow/<str:listType>/<str:user>", views.follow, name="follow"),
     path("posts/<str:feed_name>", views.feed, name="get feed"),
     path("create/<str:createType>", views.create, name="create post"),
     path("like/<str:postId>/<str:action>", views.like, name="add like"),

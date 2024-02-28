@@ -8,9 +8,17 @@
     height: 55px;
     align-self: flex-end;
 }
-
+.noFormatButton{
+    border: none;
+    background-color: transparent;
+}
 .card-body p {
     margin-bottom: 0;
+}
+.card {
+    border-radius: 10px;
+    border-color: grey;
+    border-width: 1px;
 }
 
 

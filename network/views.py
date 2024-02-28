@@ -99,6 +99,44 @@ def like(request, postId, action):
         }, status=400)
 
 
+def follow(request, listType, user):
+    user = User.objects.get(username=user)
+    followingList = user.following.all()
+    followerList = user.followers.all()
+
+    if request.method == "GET":
+        if listType == "following":
+            return JsonResponse([followingObj.following.serialize() for followingObj in followingList], safe=False)
+        elif listType == "followers":
+            return JsonResponse([followerObj.follower.serialize() for followerObj in followerList], safe=False)
+        else:
+            return JsonResponse({
+                "error": "Invalid follow type."
+            }, status=400)
+    elif request.method == "POST":
+        if listType == "following":
+            pass
+        elif listType == "followers":
+            pass
+        else:
+            return JsonResponse({
+                "error": "Invalid follow type."
+            }, status=400)
+    elif request.method == "DEL":
+        if listType == "following":
+            pass
+        elif listType == "followers":
+            pass
+        else:
+            return JsonResponse({
+                "error": "Invalid follow type."
+            }, status=400)
+    else:
+        return JsonResponse({
+            "error": "Invalid request type"
+        }, status=400)
+
+
 # VIEWS
 def index(request):
     return render(request, "network/index.html")
@@ -159,17 +197,29 @@ def register(request):
 
 def profile(request, username):
     profileUser = User.objects.get(username=username)
-    followers = profileUser.followers.all()
+    userFollowers = profileUser.followers.all()
     userFollowing = profileUser.following.all()
     posts = profileUser.Post.all()
+
+    isUserProfile = False
+    isFollowing = False
+    if request.user.is_authenticated:
+        if request.user.username == username:
+            isUserProfile = True
+        else:
+            for user in userFollowers:
+                if request.user == user.follower:
+                    isFollowing = True
+                    break
+
     return render(request, "network/profile.html", {
         "profileUsername": username,
-        "followers": followers,
-        "followerCount": len(followers),
-        "following": userFollowing,
+        "followerCount": len(userFollowers),
         "followingCount": len(userFollowing),
         "posts": posts,
         "postCount": len(posts),
+        "isUsersPofile": isUserProfile,
+        "isFollowing": isFollowing,
     })
 
 

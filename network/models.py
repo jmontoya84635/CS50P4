@@ -6,13 +6,20 @@ class User(AbstractUser):
     id = models.AutoField(primary_key=True)
 
     def serialize(self):
+        followers = self.followers.all()
+        following = self.following.all()
+        posts = self.Post.all()
         return {
             "username": self.username,
             "email": self.email,
+            "followerCount": len(followers),
+            "followingCount": len(following),
+            "postCount": len(posts),
         }
 
 
 class Follow(models.Model):
+    id = models.AutoField(primary_key=True)
     follower = models.ForeignKey(User, on_delete=models.CASCADE, related_name='following')
     following = models.ForeignKey(User, on_delete=models.CASCADE, related_name='followers')
 

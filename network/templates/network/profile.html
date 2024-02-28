@@ -4,31 +4,38 @@
     <script src="{% static 'network/profile.js' %}"></script>
 {% endblock %}
 {% block body %}
-    <br>
+    <div style="background: white">
     <hr>
     <div class="m-3 d-flex justify-content-around">
-        <h1>{{ profileUsername }}'s page</h1>
-        {% if user.is_authenticated %}
-{#            TODO: fix follow / unfollow#}
-            <button class="btn btn-primary">Follow</button>
+        <h1><strong id="username">{{ profileUsername }}'s</strong> Page</h1>
+        {% if user.is_authenticated and not isUsersPofile %}
+            {% if isFollowing %}
+                <button class="btn btn-danger" id="unfollow-button">Unfollow</button>
+            {% else %}
+                <button class="btn btn-primary" id="follow-button">Follow</button>
+            {% endif %} 
         {% endif %}
     </div>
     <hr>
     <div id="profileStats card" class="d-flex justify-content-around">
-        <button class="text-center" id="user-post-count">
-            <span>{{ postCount }}</span>
-            <span>Posts</span>
+        <div class="text-center noFormatButton" id="user-post-count" type="button">
+            <span class="h1">{{ postCount }}</span>
+            <br>
+            <span class="h4">Posts</span>
+        </div>
+        <button class="text-center noFormatButton" id="user-follower-count" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom">
+            <span class="h1">{{ followerCount }}</span>
+            <br>
+            <span class="h4">Followers</span>
         </button>
-        <div class="text-center" id="user-follower-count">
-            <h2>{{ followerCount }}</h2>
-            <h4>followers</h4>
-        </div>
-        <div class="text-center" id="user-following-count">
-            <h2>{{ followingCount }}</h2>
-            <h4>following</h4>
-        </div>
+        <button class="text-center noFormatButton" id="user-following-count" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom">
+            <span class="h1">{{ followingCount }}</span>
+            <br>
+            <span class="h4">Following</span>
+        </button>
     </div>
     <hr>
+    </div>
 
     {% for post in posts %}
         <div class="m-4 card">

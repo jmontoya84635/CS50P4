@@ -71,7 +71,7 @@ function submitNewPost(event) {
         }
     } else {
         console.log(`user said:${postTextArea.value}`)
-        fetch('create/post', {
+        fetch('/create/post', {
             method: 'POST',
             body: JSON.stringify({
                 text: postTextArea.value,
@@ -151,7 +151,7 @@ function appendComment(parent, creator, comment, commentTimestamp) {
 }
 
 function loadPosts() {
-    fetch('posts/main', {
+    fetch('/posts/main', {
         method: "GET"
     })
         .then(r => r.json())

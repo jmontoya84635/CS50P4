@@ -6,7 +6,7 @@ from django.db import IntegrityError
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
-from .models import User, Post, Reaction, Comment
+from .models import User, Post, Reaction, Comment, Follow
 
 
 # API
@@ -113,24 +113,39 @@ def follow(request, listType, user):
             return JsonResponse({
                 "error": "Invalid follow type."
             }, status=400)
-    elif request.method == "POST":
-        if listType == "following":
-            pass
-        elif listType == "followers":
-            pass
-        else:
-            return JsonResponse({
-                "error": "Invalid follow type."
-            }, status=400)
-    elif request.method == "DEL":
-        if listType == "following":
-            pass
-        elif listType == "followers":
-            pass
-        else:
-            return JsonResponse({
-                "error": "Invalid follow type."
-            }, status=400)
+    elif request.user.is_authenticated:
+        if request.method == "POST":
+            if listType == "following":
+
+                newFollow = Follow(
+                    follower=request.user,
+                    following=user
+                )
+
+                newFollow.save()
+                return JsonResponse({
+                    "message": f'followed {user.username}'
+                }, status=200)
+            else:
+                return JsonResponse({
+                    "error": "Invalid follow type."
+                }, status=400)
+        elif request.method == "PUT":
+            if listType == "following":
+                currFollow = Follow.objects.filter(follower=request.user, following=user)
+                for iterFollow in currFollow:
+                    iterFollow.delete()
+                return JsonResponse({
+                    "message": f'unfollowed {user.username}'
+                }, status=200)
+            else:
+                return JsonResponse({
+                    "error": "Invalid follow type."
+                }, status=400)
+    elif not request.user.is_authenticated:
+        return JsonResponse({
+            "error": "Must be logged in"
+        }, status=400)
     else:
         return JsonResponse({
             "error": "Invalid request type"
@@ -200,6 +215,8 @@ def profile(request, username):
     userFollowers = profileUser.followers.all()
     userFollowing = profileUser.following.all()
     posts = profileUser.Post.all()
+    posts = posts.order_by("-timestamp").all()
+
 
     isUserProfile = False
     isFollowing = False

@@ -33,10 +33,29 @@ document.addEventListener('DOMContentLoaded', function () {
 })
 
 function follow(){
-
+    fetch(`/follow/following/${username}`, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": csrftoken,
+        }
+    }).then(response => response.json())
+        .then(result => {
+            console.log(result);
+            location.reload();
+        });
 }
 
 function unfollow(){
+    fetch(`/follow/following/${username}`, {
+        method: "PUT",
+        headers: {
+            "X-CSRFToken": csrftoken,
+        }
+    }).then(response => response.json())
+        .then(result => {
+            console.log(result);
+            location.reload();
+        });
 
 }
 

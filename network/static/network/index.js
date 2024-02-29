@@ -3,8 +3,12 @@
 
 let csrftoken;
 let isLoggedIn;
+let feedType;
+
 document.addEventListener('DOMContentLoaded', function () {
     csrftoken = document.querySelector('[name=csrf-token]').content;
+    feedType = document.querySelector('#feedType').value;
+
     let createPostArea = document.querySelector('#post-text');
     let createCommentArea = document.querySelector('#comment-text');
     let heightLimit = 400;
@@ -151,112 +155,121 @@ function appendComment(parent, creator, comment, commentTimestamp) {
 }
 
 function loadPosts() {
-    fetch('/posts/main', {
+    console.log(feedType)
+    fetch(`/posts/${feedType}`, {
         method: "GET"
     })
         .then(r => r.json())
         .then(result => {
                 const postsDiv = document.querySelector('#Posts');
-                for (let i = 0; i < result.length; i++) {
-                    let child = document.createElement('div');
-                    child.className = "card m-4";
+                if (result.length) {
+                    for (let i = 0; i < result.length; i++) {
+                        let child = document.createElement('div');
+                        child.className = "card m-4";
 
-                    let header = document.createElement('div');
-                    header.className = "card-header d-flex";
+                        let header = document.createElement('div');
+                        header.className = "card-header d-flex";
 
-                    let title = document.createElement('a');
-                    title.innerHTML = result[i]["creator"];
-                    title.href = `/user/${result[i]["creator"]}`
-                    title.className = "link-primary link-opacity-50-hover link-underline-opacity-0 fs-4"
+                        let title = document.createElement('a');
+                        title.innerHTML = result[i]["creator"];
+                        title.href = `/user/${result[i]["creator"]}`
+                        title.className = "link-primary link-opacity-50-hover link-underline-opacity-0 fs-4"
 
-                    let cardBody = document.createElement('div');
-                    cardBody.className = "card-body";
+                        let cardBody = document.createElement('div');
+                        cardBody.className = "card-body";
 
-                    let text = document.createElement('p');
-                    text.innerHTML = result[i]["content"];
+                        let text = document.createElement('p');
+                        text.innerHTML = result[i]["content"];
 
-                    let footer = document.createElement('div');
-                    footer.className = "card-footer d-flex";
+                        let footer = document.createElement('div');
+                        footer.className = "card-footer d-flex";
 
-                    let timestamp = document.createElement('small');
-                    timestamp.innerHTML = result[i]["timestamp"];
-                    timestamp.className = "text-body-secondary";
+                        let timestamp = document.createElement('small');
+                        timestamp.innerHTML = result[i]["timestamp"];
+                        timestamp.className = "text-body-secondary";
 
-                    let likeButton = document.createElement('button');
-                    likeButton.innerHTML = result[i]["likeCount"];
-                    if (result[i]["liked"] === true) {
-                        likeButton.className = "ms-auto bi bi-heart-fill";
-                    } else {
-                        likeButton.className = "ms-auto bi bi-heart";
-                    }
-                    likeButton.style = "border: none; background-color: transparent; color: red;"
-                    if (isLoggedIn) {
-                        likeButton.addEventListener('click', function () {
-                            let action;
-                            if (likeButton.className === "ms-auto bi bi-heart") {
-                                likeButton.className = "ms-auto bi bi-heart-fill";
-                                action = "add";
-                            } else {
-                                likeButton.className = "ms-auto bi bi-heart";
-                                action = "remove";
-                            }
-                            fetch(`like/${result[i]["id"]}/${action}`, {
-                                method: "POST",
-                                headers: {
-                                    "X-CSRFToken": csrftoken
+                        let likeButton = document.createElement('button');
+                        likeButton.innerHTML = result[i]["likeCount"];
+                        if (result[i]["liked"] === true) {
+                            likeButton.className = "ms-auto bi bi-heart-fill";
+                        } else {
+                            likeButton.className = "ms-auto bi bi-heart";
+                        }
+                        likeButton.style = "border: none; background-color: transparent; color: red;"
+                        if (isLoggedIn) {
+                            likeButton.addEventListener('click', function () {
+                                let action;
+                                if (likeButton.className === "ms-auto bi bi-heart") {
+                                    likeButton.className = "ms-auto bi bi-heart-fill";
+                                    action = "add";
+                                } else {
+                                    likeButton.className = "ms-auto bi bi-heart";
+                                    action = "remove";
                                 }
-                            })
-                                .then(r => r.json())
-                                .then(result => {
-                                    likeButton.innerHTML = result["likeCount"];
-                                })
-                        })
-                    }
-
-                    let commentButton = document.createElement('button');
-                    commentButton.innerHTML = result[i]["commentCount"];
-                    commentButton.className = "bi me-2 bi-chat";
-                    commentButton.style = "border: none; background-color: transparent; color: blue;";
-                    commentButton.type = "button";
-                    commentButton.dataset.bsToggle = "offcanvas";
-                    commentButton.dataset.bsTarget = "#offcanvasBottom";
-                    commentButton.setAttribute('aria-controls', 'offcanvasBottom');
-
-                    commentButton.addEventListener('click', function () {
-                            let offcanvasBody = document.querySelector('#offcanvasBody');
-                            let commentSection = document.createElement('div');
-                            commentSection.id = `commentSection-${result[i]["id"]}`;
-                            offcanvasBody.append(commentSection);
-                            if (result[i]["commentCount"] > 0) {
-                                fetch(`comment/${result[i]["id"]}/viewPostReplies`, {
-                                    method: "GET"
+                                fetch(`like/${result[i]["id"]}/${action}`, {
+                                    method: "POST",
+                                    headers: {
+                                        "X-CSRFToken": csrftoken
+                                    }
                                 })
                                     .then(r => r.json())
-                                    .then(result2 => {
-                                        for (let j = 0; j < result2.length; j++) {
-                                            appendComment(commentSection, result2[j]["creator"], result2[j]["text"], result2[j]["timestamp"])
-                                        }
+                                    .then(result => {
+                                        likeButton.innerHTML = result["likeCount"];
                                     })
-                            } else {
-                                let title = document.createElement('h3');
-                                title.innerHTML = "No Comments Yet"
-                                title.className = "text-center text-muted"
-                                commentSection.append(title)
-                            }
+                            })
                         }
-                    )
-                    postsDiv.append(child);
 
-                    child.append(header);
-                    header.append(title);
+                        let commentButton = document.createElement('button');
+                        commentButton.innerHTML = result[i]["commentCount"];
+                        commentButton.className = "bi me-2 bi-chat";
+                        commentButton.style = "border: none; background-color: transparent; color: blue;";
+                        commentButton.type = "button";
+                        commentButton.dataset.bsToggle = "offcanvas";
+                        commentButton.dataset.bsTarget = "#offcanvasBottom";
+                        commentButton.setAttribute('aria-controls', 'offcanvasBottom');
 
-                    child.append(cardBody);
-                    cardBody.append(text);
+                        commentButton.addEventListener('click', function () {
+                                let offcanvasBody = document.querySelector('#offcanvasBody');
+                                let commentSection = document.createElement('div');
+                                commentSection.id = `commentSection-${result[i]["id"]}`;
+                                offcanvasBody.append(commentSection);
+                                if (result[i]["commentCount"] > 0) {
+                                    fetch(`comment/${result[i]["id"]}/viewPostReplies`, {
+                                        method: "GET"
+                                    })
+                                        .then(r => r.json())
+                                        .then(result2 => {
+                                            for (let j = 0; j < result2.length; j++) {
+                                                appendComment(commentSection, result2[j]["creator"], result2[j]["text"], result2[j]["timestamp"])
+                                            }
+                                        })
+                                } else {
+                                    let title = document.createElement('h3');
+                                    title.innerHTML = "No Comments Yet"
+                                    title.className = "text-center text-muted"
+                                    commentSection.append(title)
+                                }
+                            }
+                        )
+                        postsDiv.append(child);
 
-                    child.append(footer);
-                    footer.append(timestamp);
-                    footer.append(likeButton);
-                    footer.append(commentButton)
+                        child.append(header);
+                        header.append(title);
+
+                        child.append(cardBody);
+                        cardBody.append(text);
+
+                        child.append(footer);
+                        footer.append(timestamp);
+                        footer.append(likeButton);
+                        footer.append(commentButton)
+                    }
+                } else {
+                    console.log("no posts")
+                    let noPosts = document.createElement('h1')
+                    noPosts.className = "color-red text-center"
+                    noPosts.innerHTML = `No posts in ${feedType} feed`
+                    postsDiv.append(noPosts)
                 }
             }
         )

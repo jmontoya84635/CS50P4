@@ -12,12 +12,23 @@ from .models import User, Post, Reaction, Comment, Follow
 # API
 
 def feed(request, feed_name):
+    posts = []
     if feed_name == "main":
         posts = Post.objects.all()
+    elif request.user.is_authenticated:
+        if feed_name == "following":
+            userFollowingObjects = request.user.following.all()
+            userFollowingUsers = []
+            for user in userFollowingObjects:
+                userFollowingUsers.append(user.following)
+            posts = Post.objects.filter(creator__in=userFollowingUsers)
+            if not len(posts):
+                return JsonResponse({})
     else:
         return JsonResponse({
-            "error": "Not a valid feed"
-        }, status=400)
+            "error": "you must be logged in to see any other feed!"
+        })
+
     posts = posts.order_by("-timestamp").all()
     return JsonResponse([post.serialize(request.user) for post in posts], safe=False)
 
@@ -41,7 +52,6 @@ def create(request, createType):
         except Exception as e:
             return JsonResponse({"error": e}, status=500)
     elif createType == "comment":
-        print(f'comment on post {data.get("postId", "")} saying {text}')
         commentPost = int(data.get("postId", ""))
         newComment = Comment(
             creator=request.user,
@@ -121,7 +131,6 @@ def follow(request, listType, user):
                     follower=request.user,
                     following=user
                 )
-
                 newFollow.save()
                 return JsonResponse({
                     "message": f'followed {user.username}'
@@ -154,7 +163,9 @@ def follow(request, listType, user):
 
 # VIEWS
 def index(request):
-    return render(request, "network/index.html")
+    return render(request, "network/index.html", {
+        "feedType": "main",
+    })
 
 
 def login_view(request):
@@ -217,7 +228,6 @@ def profile(request, username):
     posts = profileUser.Post.all()
     posts = posts.order_by("-timestamp").all()
 
-
     isUserProfile = False
     isFollowing = False
     if request.user.is_authenticated:
@@ -242,4 +252,6 @@ def profile(request, username):
 
 @login_required
 def following(request):
-    return render(request, "network/following.html")
+    return render(request, "network/index.html", {
+        "feedType": "following",
+    })

@@ -5,6 +5,7 @@
 {% endblock %}
     
 {% block body %}
+    <input type="hidden" id="feedType" value="{{ feedType }}">
     <div id="create-post" class="m-4">
         <div class="card mt-5">
             {% if user.is_authenticated %}

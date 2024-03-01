@@ -7,11 +7,16 @@ from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.urls import reverse
 from .models import User, Post, Reaction, Comment, Follow
+from django.core.paginator import Paginator
+from math import ceil
+
+postPerPage = 10
 
 
 # API
 
 def feed(request, feed_name):
+    page = request.GET.get('page', 1)
     posts = []
     if feed_name == "main":
         posts = Post.objects.all()
@@ -30,7 +35,10 @@ def feed(request, feed_name):
         })
 
     posts = posts.order_by("-timestamp").all()
-    return JsonResponse([post.serialize(request.user) for post in posts], safe=False)
+    posts_paginator = Paginator(posts, postPerPage)
+    postsOnPage = posts_paginator.page(page).object_list
+
+    return JsonResponse([post.serialize(request.user) for post in postsOnPage], safe=False)
 
 
 @login_required
@@ -163,8 +171,13 @@ def follow(request, listType, user):
 
 # VIEWS
 def index(request):
+    postsNum = len(Post.objects.all())
+    pageNum = ceil(postsNum / postPerPage)
+    print(range(1, pageNum))
     return render(request, "network/index.html", {
         "feedType": "main",
+        "pageNums": range(1, pageNum + 1),
+        "pageTotal": pageNum,
     })
 
 
@@ -252,6 +265,20 @@ def profile(request, username):
 
 @login_required
 def following(request):
+    posts = []
+    userFollowingObjects = request.user.following.all()
+    userFollowingUsers = []
+    for user in userFollowingObjects:
+        userFollowingUsers.append(user.following)
+        posts = Post.objects.filter(creator__in=userFollowingUsers)
+
+    if len(posts):
+        postsNum = len(posts)
+        pageNum = ceil(postsNum / postPerPage)
+    else:
+        pageNum = 0
     return render(request, "network/index.html", {
         "feedType": "following",
+        "pageNums": range(1, pageNum + 1),
+        "pageTotal": pageNum,
     })

@@ -3,14 +3,16 @@
 {% block script %}
     <script src="{% static 'network/index.js' %}"></script>
 {% endblock %}
-    
+
 {% block body %}
     <input type="hidden" id="feedType" value="{{ feedType }}">
+    <input type="hidden" id="currPageNumber" value="1">
+    <input type="hidden" id="lastPageNumber" value={{ pageTotal }}>
     <div id="create-post" class="m-4">
         <div class="card mt-5">
             {% if user.is_authenticated %}
                 <form id="create-post-form">
-                    <h5 class="card-header">Hello, {{ user.username }}</h5>
+                    <h5 class="card-header">Hello, <strong id="logged-in-username">{{ user.username }}</strong></h5>
                     <div class="card-body">
                         <div class="d-flex">
                             <div class="form-floating flex-grow-1 me-3">
@@ -59,4 +61,19 @@
             <h5 class="text-center m-4" style="color: red">You must be signed in to create a new post</h5>
         {% endif %}
     </div>
+    {% if pageNums %}
+        <div class="d-flex m-4 justify-content-center">
+            <nav>
+                <ul class="pagination pagination" id="paginator-page-ul">
+                    <li class="page-item" id="paginator-page-previous"><a class="page-link" href="#">Previous</a></li>
+                    {% for num in pageNums %}
+                        <li class="page-item" id="paginator-page-{{ num }}"><a class="page-link" href="#">{{ num }}</a>
+                        </li>
+                    {% endfor %}
+                    <li class="page-item" id="paginator-page-next"><a class="page-link" href="#">Next</a></li>
+                </ul>
+            </nav>
+        </div>
+
+    {% endif %}
 {% endblock %}

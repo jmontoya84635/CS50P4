@@ -1,13 +1,48 @@
 // noinspection JSValidateTypes
-// noinspection JSValidateTypes
 
 let csrftoken;
 let isLoggedIn;
 let feedType;
+let currPage;
+let activePage;
+let username;
 
 document.addEventListener('DOMContentLoaded', function () {
     csrftoken = document.querySelector('[name=csrf-token]').content;
     feedType = document.querySelector('#feedType').value;
+    currPage = document.querySelector("#currPageNumber").value;
+    username = document.querySelector('#logged-in-username').innerHTML
+
+
+    let paginatorNums = document.querySelectorAll('#paginator-page-ul a');
+    let paginatorPrevious = document.querySelector("#paginator-page-previous");
+    let paginatorNext = document.querySelector("#paginator-page-next");
+    let lastPage = document.querySelector('#lastPageNumber').value;
+    activePage = document.querySelector(`#paginator-page-${currPage}`)
+    activePage.className = "page-item active";
+
+
+    paginationLimits(paginatorPrevious, paginatorNext, lastPage)
+    paginatorNums.forEach(link => {
+        let number = link.innerHTML;
+        link.addEventListener('click', () => {
+            activePage.className = "page-item"
+            currPage = parseInt(currPage);
+            if (number === "Previous" && currPage !== 1) {
+                currPage -= 1;
+                currPage = currPage.toString()
+            } else if (number === "Next" && currPage !== lastPage) {
+                currPage += 1;
+                currPage = currPage.toString()
+            } else {
+                currPage = number
+            }
+            loadPosts()
+            paginationLimits(paginatorPrevious, paginatorNext, lastPage)
+            activePage = document.querySelector(`#paginator-page-${currPage}`)
+            activePage.className = "page-item active"
+        })
+    });
 
     let createPostArea = document.querySelector('#post-text');
     let createCommentArea = document.querySelector('#comment-text');
@@ -51,9 +86,22 @@ document.addEventListener('DOMContentLoaded', function () {
             submitNewComment(event, commentPost)
         })
     }
-
     loadPosts();
 });
+
+function paginationLimits(paginatorPrevious, paginatorNext, lastPage) {
+
+    if (currPage === "1") {
+        paginatorPrevious.className = "page-item disabled";
+    } else {
+        paginatorPrevious.className = "page-item";
+    }
+    if (parseInt(currPage) === parseInt(lastPage)) {
+        paginatorNext.className = "page-item disabled";
+    } else {
+        paginatorNext.className = "page-item";
+    }
+}
 
 function submitNewPost(event) {
     let postTextArea = document.querySelector('#post-text');
@@ -85,9 +133,10 @@ function submitNewPost(event) {
             }
         }).then(response => response.json())
             .then(result => {
-                console.log(result)
+                location.reload();
             })
     }
+
 }
 
 function submitNewComment(event, postId) {
@@ -150,22 +199,67 @@ function appendComment(parent, creator, comment, commentTimestamp) {
     commentCard.append(cardBody);
     commentCard.append(footer);
     footer.append(timestamp)
-    // TODO: add likes
+}
 
+function editPost(cardBody, text, editButtonDiv, editButton, postID) {
+    editButtonDiv.textContent = "";
+    let cancelButton = document.createElement('button');
+    cancelButton.className = "btn btn-danger me-1";
+    cancelButton.innerHTML = "Cancel";
+    cancelButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        cardBody.textContent = '';
+        cardBody.append(text);
+        editButtonDiv.textContent = '';
+        editButtonDiv.append(editButton);
+    });
+    let confirmButton = document.createElement('button');
+    confirmButton.className = "btn btn-success me-1";
+    confirmButton.innerHTML = "Confirm";
+    confirmButton.addEventListener('click', (event) => {
+        editButtonDiv.textContent = '';
+        editButtonDiv.append(editButton);
+        cardBody.textContent = '';
+        text.innerHTML = textArea.value;
+        cardBody.append(text);
+        // TODO: fetch post new content
+
+    })
+    editButtonDiv.append(cancelButton, confirmButton);
+
+    let textDiv = document.createElement('div');
+    textDiv.className = "form-floating";
+    let textArea = document.createElement('textarea');
+    textArea.className = "form-control";
+    textArea.innerHTML = text.innerHTML;
+    textArea.id = "edit-text-area";
+    let label = document.createElement('label');
+    label.setAttribute("for", "edit-text-area");
+    label.innerHTML = "Edit";
+    textDiv.append(textArea, label);
+
+    cardBody.textContent = "";
+    cardBody.append(textDiv);
+    textArea.style.height = textArea.scrollHeight+'px';
+    textArea.oninput = () =>{
+        textArea.style.height = "";
+        textArea.style.height = textArea.scrollHeight+'px';
+    }
 }
 
 function loadPosts() {
-    console.log(feedType)
-    fetch(`/posts/${feedType}`, {
-        method: "GET"
+    fetch(`/posts/${feedType}?page=${currPage}`, {
+        method: "GET",
     })
         .then(r => r.json())
         .then(result => {
                 const postsDiv = document.querySelector('#Posts');
+                postsDiv.textContent = '';
                 if (result.length) {
                     for (let i = 0; i < result.length; i++) {
                         let child = document.createElement('div');
                         child.className = "card m-4";
+                        child.id = `post-id-${result[i]["id"]}`
 
                         let header = document.createElement('div');
                         header.className = "card-header d-flex";
@@ -174,6 +268,8 @@ function loadPosts() {
                         title.innerHTML = result[i]["creator"];
                         title.href = `/user/${result[i]["creator"]}`
                         title.className = "link-primary link-opacity-50-hover link-underline-opacity-0 fs-4"
+
+                        let editButtonDiv = document.createElement('div');
 
                         let cardBody = document.createElement('div');
                         cardBody.className = "card-body";
@@ -263,6 +359,21 @@ function loadPosts() {
                         footer.append(timestamp);
                         footer.append(likeButton);
                         footer.append(commentButton)
+
+                        if (isLoggedIn && (username === title.innerHTML)) {
+                            editButtonDiv.id = "edit-button-div"
+                            editButtonDiv.className = "ms-auto d-flex";
+                            header.append(editButtonDiv);
+
+                            let editButton = document.createElement('button');
+                            editButton.className = "me-1 btn btn-primary";
+                            editButton.innerHTML = "Edit post";
+                            editButton.addEventListener('click', (event) => {
+                                event.preventDefault()
+                                editPost(cardBody, text, editButtonDiv, editButton, result[i]["id"])
+                            })
+                            editButtonDiv.append(editButton)
+                        }
                     }
                 } else {
                     console.log("no posts")

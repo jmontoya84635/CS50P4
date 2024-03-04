@@ -20,7 +20,7 @@ def feed(request, feed_name):
     posts = []
     if feed_name == "main":
         posts = Post.objects.all()
-    elif request.user.is_authenticated:
+    elif request.user.is_authenticated and feed_name == "following":
         if feed_name == "following":
             userFollowingObjects = request.user.following.all()
             userFollowingUsers = []
@@ -29,16 +29,40 @@ def feed(request, feed_name):
             posts = Post.objects.filter(creator__in=userFollowingUsers)
             if not len(posts):
                 return JsonResponse({})
-    else:
-        return JsonResponse({
-            "error": "you must be logged in to see any other feed!"
-        })
+    elif (User.objects.get(username=feed_name)) is not None:
+        wantedUser = User.objects.get(username=feed_name)
+        posts = wantedUser.Post.all()
+        if not posts:
+            return JsonResponse({})
 
     posts = posts.order_by("-timestamp").all()
     posts_paginator = Paginator(posts, postPerPage)
     postsOnPage = posts_paginator.page(page).object_list
 
     return JsonResponse([post.serialize(request.user) for post in postsOnPage], safe=False)
+
+
+@login_required
+def editPost(request):
+    if request.method != "POST":
+        return JsonResponse({
+            "error": "Must be post response",
+        }, status=400)
+    data = json.loads(request.body)
+    postToEdit = data['postID']
+    text = data["text"]
+    postToEdit = Post.objects.get(pk=postToEdit)
+
+    if postToEdit.creator == request.user:
+        postToEdit.content = text
+        postToEdit.save()
+    else:
+        return JsonResponse({
+            "message": "not your post!"
+        }, status=400)
+    return JsonResponse({
+        "message": "success"
+    }, status=200)
 
 
 @login_required
@@ -79,10 +103,6 @@ def comment(request, Id, action):
         comments = post.Comment.all()
         comments = comments.order_by("-timestamp").all()
         return JsonResponse([str_comment.serialize() for str_comment in comments], safe=False)
-    elif action == "viewCommentReplies":
-        requestedComment = Comment.objects.get(pk=Id)
-        replies = requestedComment.replies.all()
-        return JsonResponse([str_comment.serialize() for str_comment in replies], safe=False)
     else:
         return JsonResponse({
             "error": "Invalid action."
@@ -173,7 +193,6 @@ def follow(request, listType, user):
 def index(request):
     postsNum = len(Post.objects.all())
     pageNum = ceil(postsNum / postPerPage)
-    print(range(1, pageNum))
     return render(request, "network/index.html", {
         "feedType": "main",
         "pageNums": range(1, pageNum + 1),
@@ -252,14 +271,19 @@ def profile(request, username):
                     isFollowing = True
                     break
 
+    postsNum = len(posts)
+    pageNum = ceil(postsNum / postPerPage)
+
     return render(request, "network/profile.html", {
         "profileUsername": username,
         "followerCount": len(userFollowers),
         "followingCount": len(userFollowing),
-        "posts": posts,
         "postCount": len(posts),
         "isUsersPofile": isUserProfile,
         "isFollowing": isFollowing,
+        "feedType": "following",
+        "pageNums": range(1, pageNum + 1),
+        "pageTotal": pageNum,
     })
 
 

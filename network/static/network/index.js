@@ -18,31 +18,33 @@ document.addEventListener('DOMContentLoaded', function () {
     let paginatorPrevious = document.querySelector("#paginator-page-previous");
     let paginatorNext = document.querySelector("#paginator-page-next");
     let lastPage = document.querySelector('#lastPageNumber').value;
-    activePage = document.querySelector(`#paginator-page-${currPage}`)
-    activePage.className = "page-item active";
+        activePage = document.querySelector(`#paginator-page-${currPage}`);
+    if (activePage != null) {
+        activePage.className = "page-item active";
 
 
-    paginationLimits(paginatorPrevious, paginatorNext, lastPage)
-    paginatorNums.forEach(link => {
-        let number = link.innerHTML;
-        link.addEventListener('click', () => {
-            activePage.className = "page-item"
-            currPage = parseInt(currPage);
-            if (number === "Previous" && currPage !== 1) {
-                currPage -= 1;
-                currPage = currPage.toString()
-            } else if (number === "Next" && currPage !== lastPage) {
-                currPage += 1;
-                currPage = currPage.toString()
-            } else {
-                currPage = number
-            }
-            loadPosts()
-            paginationLimits(paginatorPrevious, paginatorNext, lastPage)
-            activePage = document.querySelector(`#paginator-page-${currPage}`)
-            activePage.className = "page-item active"
-        })
-    });
+        paginationLimits(paginatorPrevious, paginatorNext, lastPage);
+        paginatorNums.forEach(link => {
+            let number = link.innerHTML;
+            link.addEventListener('click', () => {
+                activePage.className = "page-item"
+                currPage = parseInt(currPage);
+                if (number === "Previous" && currPage !== 1) {
+                    currPage -= 1;
+                    currPage = currPage.toString()
+                } else if (number === "Next" && currPage !== lastPage) {
+                    currPage += 1;
+                    currPage = currPage.toString()
+                } else {
+                    currPage = number
+                }
+                loadPosts()
+                paginationLimits(paginatorPrevious, paginatorNext, lastPage)
+                activePage = document.querySelector(`#paginator-page-${currPage}`)
+                activePage.className = "page-item active"
+            })
+        });
+    }
 
     let createPostArea = document.querySelector('#post-text');
     let createCommentArea = document.querySelector('#comment-text');
@@ -90,7 +92,6 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function paginationLimits(paginatorPrevious, paginatorNext, lastPage) {
-
     if (currPage === "1") {
         paginatorPrevious.className = "page-item disabled";
     } else {
@@ -132,7 +133,7 @@ function submitNewPost(event) {
                 "X-CSRFToken": csrftoken,
             }
         }).then(response => response.json())
-            .then(result => {
+            .then(()=> {
                 location.reload();
             })
     }
@@ -169,7 +170,8 @@ function submitNewComment(event, postId) {
             }
         }).then(response => response.json())
             .then(result => {
-                console.log(result)
+                console.log(result);
+                location.reload();
             })
     }
 }
@@ -194,11 +196,11 @@ function appendComment(parent, creator, comment, commentTimestamp) {
     timestamp.innerHTML = commentTimestamp;
     timestamp.className = "text-body-secondary";
 
-    parent.append(commentCard)
+    parent.append(commentCard);
     commentCard.append(commentHeader);
     commentCard.append(cardBody);
     commentCard.append(footer);
-    footer.append(timestamp)
+    footer.append(timestamp);
 }
 
 function editPost(cardBody, text, editButtonDiv, editButton, postID) {
@@ -217,12 +219,27 @@ function editPost(cardBody, text, editButtonDiv, editButton, postID) {
     confirmButton.className = "btn btn-success me-1";
     confirmButton.innerHTML = "Confirm";
     confirmButton.addEventListener('click', (event) => {
+        event.preventDefault();
         editButtonDiv.textContent = '';
         editButtonDiv.append(editButton);
         cardBody.textContent = '';
         text.innerHTML = textArea.value;
-        cardBody.append(text);
-        // TODO: fetch post new content
+        fetch('/edit', {
+            method: "POST",
+            body: JSON.stringify({
+                "postID": postID,
+                "text": text.innerHTML,
+            }),
+            headers: {
+                "X-CSRFToken": csrftoken,
+            }
+        }).then(response => response.json())
+            .then(result => {
+                console.log(result["message"]);
+                if (result["message"] === "success"){
+                    cardBody.append(text);
+                }
+            })
 
     })
     editButtonDiv.append(cancelButton, confirmButton);
@@ -240,10 +257,10 @@ function editPost(cardBody, text, editButtonDiv, editButton, postID) {
 
     cardBody.textContent = "";
     cardBody.append(textDiv);
-    textArea.style.height = textArea.scrollHeight+'px';
-    textArea.oninput = () =>{
+    textArea.style.height = textArea.scrollHeight + 'px';
+    textArea.oninput = () => {
         textArea.style.height = "";
-        textArea.style.height = textArea.scrollHeight+'px';
+        textArea.style.height = textArea.scrollHeight + 'px';
     }
 }
 

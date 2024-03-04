@@ -11,7 +11,10 @@ document.addEventListener('DOMContentLoaded', function () {
     csrftoken = document.querySelector('[name=csrf-token]').content;
     feedType = document.querySelector('#feedType').value;
     currPage = document.querySelector("#currPageNumber").value;
-    username = document.querySelector('#logged-in-username').innerHTML
+    isLoggedIn = document.querySelector('#isLoggedIn') != null;
+    if (isLoggedIn){
+        username = document.querySelector('#logged-in-username').innerHTML
+    }
 
 
     let paginatorNums = document.querySelectorAll('#paginator-page-ul a');
